@@ -138,5 +138,99 @@ namespace SimplexMethod
                 }
             }
         }
+
+        private void LoadFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Text file (*.txt)|*.txt",
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    string filePath = openFileDialog.FileName;
+                    string[] lines = File.ReadAllLines(filePath);
+
+                    // Первая строка - количество переменных и ограничений
+                    var firstLineParts = lines[0].Split(' ');
+                    VariablesBox.Text = firstLineParts[0]; // Количество переменных
+                    ConstraintsBox.Text = firstLineParts[1]; // Количество ограничений
+
+                    // Вторая строка - целевая функция
+                    ObjectiveBox.Text = lines[1];
+
+                    // Следующие строки - это ограничения
+                    ConstraintsPanel.Children.Clear();
+                    for (int i = 2; i < lines.Length; i++)
+                    {
+                        string line = lines[i].Trim();
+
+                        string sign = string.Empty;
+                        string rhs = string.Empty;
+                        string[] coefs;
+
+                        if (line.Contains("<="))
+                        {
+                            sign = "<=";
+                            coefs = line.Split(new[] { "<=" }, StringSplitOptions.None)[0].Trim().Split(' ');
+                            rhs = line.Split(new[] { "<=" }, StringSplitOptions.None)[1].Trim();
+                        }
+                        else if (line.Contains(">="))
+                        {
+                            sign = ">=";
+                            coefs = line.Split(new[] { ">=" }, StringSplitOptions.None)[0].Trim().Split(' ');
+                            rhs = line.Split(new[] { ">=" }, StringSplitOptions.None)[1].Trim();
+                        }
+                        else if (line.Contains("="))
+                        {
+                            sign = "=";
+                            coefs = line.Split(new[] { "=" }, StringSplitOptions.None)[0].Trim().Split(' ');
+                            rhs = line.Split(new[] { "=" }, StringSplitOptions.None)[1].Trim();
+                        }
+                        else
+                        {
+                            throw new Exception("Неверный формат ограничения в файле.");
+                        }
+
+                        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
+
+                        TextBox coefBox = new TextBox
+                        {
+                            Width = 300,
+                            Margin = new Thickness(0, 0, 10, 0),
+                            ToolTip = "Коэффициенты через пробел",
+                            Text = string.Join(" ", coefs)
+                        };
+
+                        ComboBox signBox = new ComboBox
+                        {
+                            Width = 60,
+                            Margin = new Thickness(0, 0, 10, 0),
+                            ItemsSource = new[] { "<=", ">=", "=" },
+                            SelectedItem = sign 
+                        };
+
+                        TextBox rhsBox = new TextBox
+                        {
+                            Width = 60,
+                            ToolTip = "Правая часть",
+                            Text = rhs
+                        };
+
+                        row.Children.Add(coefBox);
+                        row.Children.Add(signBox);
+                        row.Children.Add(rhsBox);
+
+                        ConstraintsPanel.Children.Add(row);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка при загрузке: " + ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }
